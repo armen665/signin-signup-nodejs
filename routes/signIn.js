@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -18,10 +19,18 @@ router.post('/signin', (req, res, next) => {
         const users = JSON.parse(data.toString());
         isEmailCorrect = false;
         isPassCorrect = false;
+        let iv =Buffer.alloc(16, 0);
+        let key = crypto.scryptSync(req.body.password, 'salt', 24)
         users.forEach(el => {
+            var mykey = crypto.createDecipher('aes-128-cbc', key, iv);
+            var decrPass = mykey.update(el.pass, 'hex', 'utf8')
+            decrPass += mykey.final('utf8');
+
+            console.log(decrPass);
+
             if(el.email === req.body.email) {
                 isEmailCorrect = true;
-                if (el.pass === req.body.password) {
+                if (decrPass === req.body.password) {
                     isPassCorrect = true
                 }
             }

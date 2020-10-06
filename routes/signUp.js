@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -23,9 +24,15 @@ router.post('/signup', (req, res, next) => {
             }
         });
         if(!isUserExists) {
+            let iv =Buffer.alloc(16, 0);
+            let key = crypto.scryptSync(req.body.password, 'salt', 24)
+            let mykey = crypto.createCipher('aes-128-cbc', key, iv);
+            let encrPass = mykey.update(req.body.password, 'utf8', 'hex')
+            encrPass += mykey.final('hex');
+
             users.push({
                 email: req.body.email,
-                pass: req.body.password
+                pass: encrPass
             });
             fs.writeFile('./users.json', JSON.stringify(users), err => {
                 if (err) {
